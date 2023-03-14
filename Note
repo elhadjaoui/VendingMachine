@@ -1,0 +1,4 @@
+truffle  compile
+truffle migrate --network goerli
+
+contract address : 0x05F64c0fE1E46cE899F724e42532c0924dd8080e
