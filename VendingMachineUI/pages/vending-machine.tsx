@@ -5,21 +5,32 @@ import VendingMachineContract from "../web3/vending"
 export default function VendingMachine() {
     const [err, setError] = useState("")
     const [inventory, setInventory] = useState("")
+    const [Account, setAccount] = useState("")
+    const [isConnected, setisConnected] = useState(false)
+    let web3 : Web3;
 
     useEffect(() => {
         InventoryHandler();
     },[])
+
+
+    const getMyAccountHandler = async () =>
+    {
+        const account = await web3.eth.getAccounts();    
+        setAccount(account[0])
+    }
     const InventoryHandler = async () => {
         const inventory = await VendingMachineContract.methods.getVendingMachineBalance().call();
         setInventory(inventory)
     }
     const connectWalletHandler = async () => {
 
-        let web3;
         if (typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
             try {
                 await window.ethereum.request({ method: 'eth_requestAccounts' })
                 web3 = new Web3(window.ethereum)
+                getMyAccountHandler()
+                setisConnected(true);
                 // await window.ethereum.enable();
             } catch (e: any) {
                 console.log("ERRRRRRRR");
@@ -42,9 +53,9 @@ export default function VendingMachine() {
                     </a>
                 </div>
 
-
+                <div><h1 className="text-white">{Account}</h1></div>
                 <div className="flex flex-1 justify-end">
-                    <a href="#" className=" btn leading-6 btn-accent lowercase  text-white" onClick={connectWalletHandler}>connect wallet</a>
+                    { isConnected ? <a className=" btn leading-6 btn-danger lowercase  text-white" onClick={connectWalletHandler}>disconnect</a> :<a className=" btn leading-6 btn-accent lowercase  text-white" onClick={connectWalletHandler}>connect wallet</a>}
                 </div>
             </nav>
             <div className="mx-auto flex  items-center justify-center p-6  my-5">

@@ -1,4 +1,8 @@
 truffle  compile
 truffle migrate --network goerli
 
-contract address : 0x05F64c0fE1E46cE899F724e42532c0924dd8080e
+contract address : 0x05F64c0fE1E46cE899F724e42532c0924dd8080e |  0x27b2e109B557Fe45a1E8dC11c897a1A67Da837dE  
+
+
+call : is for reading from the blockchain 
+send is for writing to the blockchain
