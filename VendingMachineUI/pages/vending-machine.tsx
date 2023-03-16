@@ -8,61 +8,91 @@ import 'react-toastify/dist/ReactToastify.css';
 
 export default function VendingMachine() {
     const [err, setError] = useState("")
-    const [inventory, setInventory] = useState("")
-    const [Account, setAccount] = useState("")
+    const [inventory, setInventory] = useState(1)
+    const [accountAddress, setAccountAddress] = useState<string | null>(null)
     const [isConnected, setisConnected] = useState(false)
     const [mydonutCount, setDonutCount] = useState('')
+    const [vmContract, setVmContract] = useState<any>(null)
     const [purchaseAmount, setPurchaseAmount] = useState(1)
+    const [purchaseTracker, setpurchaseTracker] = useState(0)
+    const [web3, setWeb3] = useState<Web3 | null>(null)
     const [restockAmount, setrestockAmount] = useState(1)
-    let web3: Web3;
+    
 
     useEffect(() => {
-        InventoryHandler();
-    }, [])
+        if (vmContract)
+             InventoryHandler();
+        if (vmContract && accountAddress)
+            getDonutCountHandler()
+    }, [vmContract, accountAddress, purchaseTracker])
+
     const updatedonutAmount = (e: any) => {
         const value = e.target.value;
         setPurchaseAmount(value)
     }
+    const updateRestockAmount = (e: any) => {
+        const value = e.target.value;
+        setrestockAmount(value)
+    }
     const byDonutHandler = async () => {
-        // const account = await web3.eth.getAccounts();   
-        console.log(Account);
         try {
-            await VendingMachineContract.methods.purchase(purchaseAmount).send({ from: Account });
+            await vmContract.methods.purchase(purchaseAmount).send({ from: accountAddress, value:  (Number(web3?.utils.toWei('0.001', "ether")) * purchaseAmount)});
             setPurchaseAmount(1)
+            setpurchaseTracker(purchaseTracker + 1)
+            toast.success("Purchase Succeeded ")
         } catch (error:any) {
+            console.log(error.message);
             toast.error(error.message)
-            
         }
        
     }
-
-    const InventoryHandler = async () => {
-        const inventory = await VendingMachineContract.methods.getVendingMachineBalance().call();
-        setInventory(inventory)
+    const restockHandler = async () => {
+        try {
+            await vmContract.methods.restock(restockAmount).send({ from: accountAddress});
+            setPurchaseAmount(1)
+            setpurchaseTracker(purchaseTracker + 1)
+            toast.success("Restock Succeeded ")
+        } catch (error:any) {
+            console.log(error.message);
+            toast.error(error.message)
+        }
+       
     }
-    const getDonutCountHandler = async (address: string) => {
-        // const account = await web3.eth.getAccounts(); 
-        const mydonutCount = await VendingMachineContract.methods.donutBalances(address).call();
-        setDonutCount(mydonutCount)
+    const InventoryHandler = async () => {
+        try {
+            const inventory = await vmContract.methods.getVendingMachineBalance().call();
+            setInventory(inventory)
+        } catch (error) {
+            toast.error("Something went wrong");
+        }
+       
+    }
+    const getDonutCountHandler = async () => {
+        try {
+            const mydonutCount = await vmContract.methods.donutBalances(accountAddress).call();
+            setDonutCount(mydonutCount)
+        } catch (error) {
+            toast.error("Something went wrong");
+        }
+       
     }
     const connectWalletHandler = async () => {
-
         if (typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
             try {
                 await window.ethereum.request({ method: 'eth_requestAccounts' })
-                web3 = new Web3(window.ethereum)
+                let web3 = new Web3(window.ethereum)
+                setWeb3(web3);
+                // await window.ethereum.enable();
 
                 const accounts = await web3.eth.getAccounts();
-                setAccount(accounts[0])
-
-                getDonutCountHandler(accounts[0]);
+                setAccountAddress(accounts[0])
+                const vm = VendingMachineContract(web3);
+                setVmContract(vm)
                 setisConnected(true);
-                // await window.ethereum.enable();
             } catch (e: any) {
                 toast.error("Something went wrong");
+                setisConnected(false);
             }
-
-
         }
         else {
             toast.error("Please install Metamask");
@@ -78,7 +108,7 @@ export default function VendingMachine() {
                     </a>
                 </div>
 
-                <div className=" w-full min-w-[200px]"><h1 className="text-accent text-center truncate mx-2">{Account}</h1></div>
+                <div className=" w-full min-w-[200px]"><h1 className="text-accent text-center truncate mx-2">{accountAddress}</h1></div>
                 <div className="flex flex-1 justify-end">
                     {isConnected ? <a className=" btn leading-6 btn-secondary   text-white" onClick={connectWalletHandler}>Disconnect</a> : <a className=" btn leading-6 btn-accent lowercase  text-white" onClick={connectWalletHandler}>connect wallet</a>}
                 </div>
@@ -94,8 +124,8 @@ export default function VendingMachine() {
 
                     <div className="stat  border-slate-50 place-items-center">
                         <div className="stat-title text-white">Restock The Inventory</div>
-                        <input type="number" min={1} placeholder="Type here" className="input mt-3 input-bordered input-accent w-full max-w-xs" />
-                        <button className="btn btn-accent  mt-3">Restock</button>
+                        <input  onChange={updateRestockAmount} value={restockAmount} type="number" min={1} placeholder="Type here" className="input mt-3 input-bordered input-accent w-full max-w-xs" />
+                        <button onClick={restockHandler} className="btn btn-accent  mt-3">Restock</button>
                     </div>
 
                     <div className="stat border-slate-50 place-items-center">

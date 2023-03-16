@@ -22,7 +22,7 @@ contract VendingMachine {
     }
     function purchase (uint amount) public payable
     {
-        require(msg.value >=  amount * 2 ether ,  "It costs 2 ethers per donuts ");
+        require(msg.value >=  amount * 0.001 ether ,  "It costs 2 ethers per donuts ");
         require(donutBalances[address(this)] >= amount , "Not enough donuts in stock");
         donutBalances[msg.sender] += amount;
         donutBalances[address(this)] -= amount; 
