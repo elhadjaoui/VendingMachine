@@ -8,31 +8,51 @@ import 'react-toastify/dist/ReactToastify.css';
 
 export default function VendingMachine() {
     const [err, setError] = useState("")
-    const [inventory, setInventory] = useState(1)
+    const [inventory, setInventory] = useState("")
     const [accountAddress, setAccountAddress] = useState<string | null>(null)
     const [isConnected, setisConnected] = useState(false)
     const [mydonutCount, setDonutCount] = useState('')
+    const [contractBalance, setcontractBalance] = useState<number>()
     const [vmContract, setVmContract] = useState<any>(null)
     const [purchaseAmount, setPurchaseAmount] = useState(1)
     const [purchaseTracker, setpurchaseTracker] = useState(0)
     const [web3, setWeb3] = useState<Web3 | null>(null)
     const [restockAmount, setrestockAmount] = useState(1)
+    const [WithdrawAddress, setWithdrawAddress] = useState("")
+    const [Owner, setOwner] = useState<string | null>(null)
     
 
     useEffect(() => {
         if (vmContract)
-             InventoryHandler();
+        {
+            InventoryHandler();
+            getContractBalance()
+        }
         if (vmContract && accountAddress)
+        {
             getDonutCountHandler()
+            getOwner()
+        }
     }, [vmContract, accountAddress, purchaseTracker])
 
     const updatedonutAmount = (e: any) => {
         const value = e.target.value;
         setPurchaseAmount(value)
     }
+    const WithdrawHandler = (e: any) => {
+        const value = e.target.value;
+        setWithdrawAddress(value)
+    }
     const updateRestockAmount = (e: any) => {
         const value = e.target.value;
         setrestockAmount(value)
+    }
+    const getOwner = async() =>
+    {
+        const owner = await vmContract.methods.owner().call();
+        console.log("owner = ",owner);
+        
+        setOwner(owner)
     }
     const byDonutHandler = async () => {
         try {
@@ -42,6 +62,16 @@ export default function VendingMachine() {
             toast.success("Purchase Succeeded ")
         } catch (error:any) {
             console.log(error.message);
+            toast.error(error.message)
+        }
+       
+    }
+    const WithdrawFunds = async () => {
+        try {
+            await vmContract.methods.withdraw(WithdrawAddress).send({ from: accountAddress})
+            setpurchaseTracker(purchaseTracker + 1)
+            toast.success("Fund Withdrawed")
+        } catch (error:any) {
             toast.error(error.message)
         }
        
@@ -62,6 +92,17 @@ export default function VendingMachine() {
         try {
             const inventory = await vmContract.methods.getVendingMachineBalance().call();
             setInventory(inventory)
+        } catch (error) {
+            toast.error("Something went wrong");
+        }
+       
+    }
+
+    const getContractBalance = async () => {
+        try {
+            const balance = await vmContract.methods.getContractBalance().call();
+            const  balance2eth =   Number(web3?.utils.fromWei(balance, 'ether'));
+            setcontractBalance(balance2eth)
         } catch (error) {
             toast.error("Something went wrong");
         }
@@ -121,12 +162,12 @@ export default function VendingMachine() {
                         <div className="stat-value">{inventory}</div>
                         {/* <div className="stat-desc">From January 1st to February 1st</div> */}
                     </div>
-
+                    { accountAddress == Owner ? 
                     <div className="stat  border-slate-50 place-items-center">
                         <div className="stat-title text-white">Restock The Inventory</div>
                         <input  onChange={updateRestockAmount} value={restockAmount} type="number" min={1} placeholder="Type here" className="input mt-3 input-bordered input-accent w-full max-w-xs" />
                         <button onClick={restockHandler} className="btn btn-accent  mt-3">Restock</button>
-                    </div>
+                    </div>: ""}
 
                     <div className="stat border-slate-50 place-items-center">
                         <div className="stat-title  text-white">Purchase A Donut</div>
@@ -138,6 +179,17 @@ export default function VendingMachine() {
                         <div className="stat-value">{mydonutCount}</div>
                         {/* <div className="stat-desc">From January 1st to February 1st</div> */}
                     </div>
+                    <div className="stat  border-slate-50 place-items-center">
+                        <div className="stat-title  text-white">Contract Balance</div>
+                        <div className="stat-value">{contractBalance} ether</div>
+                        {/* <div className="stat-desc">From January 1st to February 1st</div> */}
+                    </div>
+                    { accountAddress == Owner ?     <div className="stat border-slate-50 place-items-center">
+                        <div className="stat-title  text-white">Withdraw Funds</div>
+                        <input onChange={WithdrawHandler} value={WithdrawAddress} type="text" placeholder="Type here" className="input mt-3 input-bordered input-accent w-full max-w-xs" />
+                        <button onClick={WithdrawFunds} className="btn btn-accent  mt-3">Withdraw</button>
+                    </div> : ""}
+                   
 
                 </div>
             </div>

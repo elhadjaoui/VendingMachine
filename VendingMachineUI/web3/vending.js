@@ -5,7 +5,7 @@ import VendinMachineAbi from "../../VendingMachineWeb3/abis/VendingMachine.json"
 const VendingMachineContract = web3 => 
 {
     // return instance of the contract that we gonna work with 
-    return new web3.eth.Contract(VendinMachineAbi.abi, "0x7C84FCA6964171168D561eEBd6F5c2d54906f5Bd");
+    return new web3.eth.Contract(VendinMachineAbi.abi, "0xA932b152FC56fd5C084ceA98115CA04D8F5838D4");
 
 }
 
